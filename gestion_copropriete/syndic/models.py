@@ -75,3 +75,30 @@ class Gestionnaire(models.Model):
 
     def __str__(self):
         return f'{self.responsable.username}, {self.role}'
+
+class Compte(models.Model):
+    copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='comptes')
+    TYPE_CHOICE = (('Bilan-actif','bilan-actif'), ('Bilan-passif','bilan-passif'),('Charges', 'charges'),('Revenus','revenus'),)
+    type_compte = models.CharField(max_length=20, choices=TYPE_CHOICE)
+    libelle_compte = models.CharField(max_length=50)
+    creeLe = models.DateTimeField(auto_now_add = True)
+    modifieLe = models.DateTimeField(auto_now = True)
+    actif = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.type_compte},{self.libelle_compte}'
+
+class Transaction(models.Model):
+    copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='transactions')
+    operation = models.CharField(max_length=200)
+    compte_debit = models.ForeignKey(Compte, on_delete=models.CASCADE, related_name='mouvements_debit')
+    compte_credit = models.ForeignKey(Compte, on_delete=models.CASCADE, related_name='mouvements_credit')
+    montant = models.DecimalField(max_digits=10, decimal_places=2)
+    justification = models.FileField(upload_to='justifs/%Y/%m/%d/', blank=False)
+    creePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsCrees")
+    valideePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsValidees")
+    creeLe = models.DateTimeField(auto_now_add = True)
+    modifieLe = models.DateTimeField(auto_now = True)
+
+    def __str__(self):
+        return f'{self.operation},{self.compte_debit},{self.compte_credit},{self.montant}'
