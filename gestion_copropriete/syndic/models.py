@@ -5,7 +5,16 @@ from django.contrib.auth.models import User, AbstractUser
 # Create your models here.
 
 class User(AbstractUser):
-    pass
+    def getProprietes(self):
+        result=[]
+        for prop in self.proprietaires.filter(actif=True):
+            result = result+list(prop.partiesPrivees.all())
+        return result
+    def getCoproprietesGerees(self):
+        result=[]
+        for gest in self.gestionnaires.filter(actif=True):
+            result = result+list(gest.coproprietes.all())
+        return result
 
 class Copropriete(models.Model):
     copropriete = models.CharField(max_length = 200)
@@ -16,6 +25,9 @@ class Copropriete(models.Model):
     creeLe = models.DateTimeField(auto_now_add = True)
     modifieLe = models.DateTimeField(auto_now = True)
     actif = models.BooleanField(default = False)
+
+    class Meta:
+        unique_together = [['copropriete', 'adresse', 'ville']]
 
     def __str__(self):
         return f'{self.copropriete}, {self.ville}, {self.pays}'
@@ -44,8 +56,11 @@ class PartiePrivee(models.Model):
     modifieLe = models.DateTimeField(auto_now = True)
     actif = models.BooleanField(default = True)
 
+    class Meta:
+        unique_together = [['copropriete', 'identifiant']]
+
     def __str__(self):
-        return f'{self.identifiant}'
+        return f'{self.copropriete.copropriete}, {self.identifiant}'
 
     def getProprietairesActuels(self):
         return self.hist_proprietaires.filter(actif=True)
@@ -85,8 +100,17 @@ class Compte(models.Model):
     modifieLe = models.DateTimeField(auto_now = True)
     actif = models.BooleanField(default=True)
 
+    class Meta:
+        unique_together = [['copropriete', 'type_compte', 'libelle_compte']]
+
     def __str__(self):
         return f'{self.type_compte},{self.libelle_compte}'
+    def total_debit(self):
+        return sum(x.montant for x in self.mouvements_debit)
+    def total_credit(self):
+        return sum(x.montant for x in self.mouvements_credit)
+    def solde_compte(self):
+        return self.total_debit-self.total_credit
 
 class Transaction(models.Model):
     copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='transactions')
@@ -95,6 +119,7 @@ class Transaction(models.Model):
     compte_credit = models.ForeignKey(Compte, on_delete=models.CASCADE, related_name='mouvements_credit')
     montant = models.DecimalField(max_digits=10, decimal_places=2)
     justification = models.FileField(upload_to='justifs/%Y/%m/%d/', blank=False)
+    date_comptable = models.DateTimeField(auto_now_add = False)
     creePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsCrees")
     valideePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsValidees")
     creeLe = models.DateTimeField(auto_now_add = True)
