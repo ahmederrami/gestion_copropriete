@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser
+import datetime
 
 # Create your models here.
 
@@ -27,13 +28,13 @@ class Copropriete(models.Model):
     actif = models.BooleanField(default = False)
 
     class Meta:
-        unique_together = [['copropriete', 'adresse', 'ville']]
+        unique_together = [['copropriete', 'ville']]
 
     def __str__(self):
         return f'{self.copropriete}, {self.ville}, {self.pays}'
     
     def totalPartsExact(self):
-        sumPartsDansCopropriete = sum(pdc.PartDansCopropriete for pdc in self.partiesPrivees)
+        sumPartsDansCopropriete = sum(pdc.partDansCopropriete for pdc in self.partiesPrivees.all())
         if sumPartsDansCopropriete == self.totalPartsCopropriete:
             return True
         else:
@@ -42,11 +43,40 @@ class Copropriete(models.Model):
     def getCoproprietairesActuels(self):
         result = []
         for pp in self.partiesPrivees.filter(actif=True):
-            result = result + pp.proprietaireActuel
+            for proprietaire in pp.hist_proprietaires.filter(actif=True):
+                result.append(proprietaire.proprietaire)
         return list(set(result))
 
     def getGestionairesActuels(self):
         return self.hist_gestionnaires.filter(actif=True)
+    
+    def getSituationFinanciere(self,annee):
+        result={}
+        for compte in self.comptes.filter(actif=True):
+            result[compte.libelle_compte]=compte.solde_compte()
+        return result
+    
+    def getJournalTransactions(self,annee):
+        return self.transactions.filter(date_comptable__year=annee)
+
+    def cloturerExercice(self,exercice): #normalement exercice precedent
+        pass
+        #condition : on est sur le nouveau exercice (exercice+1), ecriture de cloture non encore passee
+        #procedure : calculer le solde CPC, passer l'ecriture resultat-exercice-cpc avec resultat-exercice-bilan
+
+    def ouvertureExercice(self,exercice):
+        pass
+        #procedure : s'assuer que le bilan est equilibre, passer les soldes des comptes de bilan de 
+        #l'exercice precedent avec le solde initial
+ 
+
+class Parametre(models.Model):
+    copropriete = models.OneToOneField(Copropriete, on_delete = models.CASCADE,primary_key=True, related_name="parametres")
+    exerciceOuvert = models.IntegerField(blank=False, null=False)
+    cotisationMensuelle = models.DecimalField(max_digits=10, decimal_places=2)
+    creeLe = models.DateTimeField(auto_now_add = True)
+    modifieePar = models.ForeignKey(User, on_delete = models.CASCADE)
+    modifieLe = models.DateTimeField(auto_now = True)
 
 class PartiePrivee(models.Model):
     copropriete = models.ForeignKey(Copropriete, on_delete = models.CASCADE, related_name = "partiesPrivees")
@@ -68,7 +98,7 @@ class PartiePrivee(models.Model):
 class Proprietaire(models.Model):
     partiesPrivees = models.ManyToManyField(PartiePrivee, related_name = "hist_proprietaires")
     proprietaire = models.ForeignKey(User, on_delete=models.CASCADE, related_name = "proprietaires")
-    dateDebut = models.DateTimeField()
+    dateDebut = models.DateTimeField(default=timezone.now)
     dateFin = models.DateTimeField(null=True, blank=True)
     creeLe = models.DateTimeField(auto_now_add = True)
     modifieLe = models.DateTimeField(auto_now = True)
@@ -82,7 +112,7 @@ class Gestionnaire(models.Model):
     coproprietes = models.ManyToManyField(Copropriete, related_name = "hist_gestionnaires")
     responsable = models.ForeignKey(User, on_delete = models.CASCADE, related_name="gestionnaires")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    dateDebut = models.DateTimeField()
+    dateDebut = models.DateTimeField(default=timezone.now)
     dateFin = models.DateTimeField(null=True, blank=True)
     creeLe = models.DateTimeField(auto_now_add = True)
     modifieLe = models.DateTimeField(auto_now = True)
@@ -91,9 +121,10 @@ class Gestionnaire(models.Model):
     def __str__(self):
         return f'{self.responsable.username}, {self.role}'
 
-class Compte(models.Model):
+class Compte(models.Model): # compte de base a generer automatiquement : caisse, banque, idPP, solde initial,
+                            # resultat exercice, resultat-cpc. Les fournisseurs sont a inserer manuellement
     copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='comptes')
-    TYPE_CHOICE = (('Bilan-actif','bilan-actif'), ('Bilan-passif','bilan-passif'),('Charges', 'charges'),('Revenus','revenus'),)
+    TYPE_CHOICE = (('Bilan-actif','bilan-actif'), ('Bilan-passif','bilan-passif'),('CPC-Charges', 'cpc-charges'),('CPC-Revenus','cpc-revenus'),)
     type_compte = models.CharField(max_length=20, choices=TYPE_CHOICE)
     libelle_compte = models.CharField(max_length=50)
     creeLe = models.DateTimeField(auto_now_add = True)
@@ -106,11 +137,14 @@ class Compte(models.Model):
     def __str__(self):
         return f'{self.type_compte},{self.libelle_compte}'
     def total_debit(self):
-        return sum(x.montant for x in self.mouvements_debit)
+        return sum(x.montant for x in self.mouvements_debit.all())
     def total_credit(self):
-        return sum(x.montant for x in self.mouvements_credit)
+        return sum(x.montant for x in self.mouvements_credit.all())
     def solde_compte(self):
-        return self.total_debit-self.total_credit
+        return self.total_debit()-self.total_credit()
+    def desactiver(self):
+         # ne pas autoriser la desactivation si solde pas nul
+         pass
 
 class Transaction(models.Model):
     copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='transactions')
@@ -119,11 +153,22 @@ class Transaction(models.Model):
     compte_credit = models.ForeignKey(Compte, on_delete=models.CASCADE, related_name='mouvements_credit')
     montant = models.DecimalField(max_digits=10, decimal_places=2)
     justification = models.FileField(upload_to='justifs/%Y/%m/%d/', blank=False)
-    date_comptable = models.DateTimeField(auto_now_add = False)
+    date_comptable = models.DateTimeField(default=timezone.now,blank=False) # doit etre sur la periode ouverte et < a la date du jour
+                                                               # sinon sur l'annee en cours et < date du jour (si janvier)
     creePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsCrees")
-    valideePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsValidees")
+    valideePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsValidees",null=True)
     creeLe = models.DateTimeField(auto_now_add = True)
     modifieLe = models.DateTimeField(auto_now = True)
 
     def __str__(self):
         return f'{self.operation},{self.compte_debit},{self.compte_credit},{self.montant}'
+
+    def transactionValide(self):
+        exOuv=self.copropriete.parametres.exerciceOuvert
+        if self.date_comptable.year==exOuv:
+            return True
+        else:
+            if self.date_comptable.year>exOuv and self.date_comptable<=timezone.now():
+                return True
+            else:
+                return False
