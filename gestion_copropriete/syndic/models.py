@@ -143,8 +143,11 @@ class Compte(models.Model): # compte de base a generer automatiquement : caisse,
     def solde_compte(self):
         return self.total_debit()-self.total_credit()
     def desactiver(self):
-         # ne pas autoriser la desactivation si solde pas nul
-         pass
+        if self.solde_compte()==0:
+            self.actif=False
+            return "Le compte a ete desactive"
+        else:
+            return "Le compte ne peut etre desactive si son solde n'est pas nul"
 
 class Transaction(models.Model):
     copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='transactions')
@@ -153,8 +156,7 @@ class Transaction(models.Model):
     compte_credit = models.ForeignKey(Compte, on_delete=models.CASCADE, related_name='mouvements_credit')
     montant = models.DecimalField(max_digits=10, decimal_places=2)
     justification = models.FileField(upload_to='justifs/%Y/%m/%d/', blank=False)
-    date_comptable = models.DateTimeField(default=timezone.now,blank=False) # doit etre sur la periode ouverte et < a la date du jour
-                                                               # sinon sur l'annee en cours et < date du jour (si janvier)
+    date_comptable = models.DateTimeField(default=timezone.now,blank=False)
     creePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsCrees")
     valideePar = models.ForeignKey(User, on_delete = models.CASCADE, related_name="transactionsValidees",null=True)
     creeLe = models.DateTimeField(auto_now_add = True)

@@ -90,6 +90,7 @@ class CoproprieteTestCase(TestCase):
         trans2.save()
     def test_copropriete(self):
         copropriete1=Copropriete.objects.get(copropriete='raison sociale1')
+        compte1=copropriete1.comptes.all()[0]
         self.assertEqual(copropriete1.ville,'ville')
         self.assertEqual(copropriete1.totalPartsCopropriete, 7.0)
         self.assertEqual(copropriete1.totalPartsExact(),True)
@@ -98,6 +99,8 @@ class CoproprieteTestCase(TestCase):
         self.assertEqual(len(copropriete1.getSituationFinanciere(2020)),3)
         self.assertEqual(sum([copropriete1.getSituationFinanciere(2020)[x] for x in copropriete1.getSituationFinanciere(2020)]),0.00)
         self.assertEqual(copropriete1.transactions.all()[0].transactionValide(),True)
+        self.assertEqual(compte1.solde_compte(),1000)
+        self.assertEqual(compte1.desactiver(),"Le compte ne peut etre desactive si son solde n'est pas nul")
 
         copropriete2=Copropriete.objects.get(copropriete='raison sociale2')
         coproParam2=copropriete2.parametres

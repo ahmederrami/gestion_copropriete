@@ -1,7 +1,33 @@
-@startuml
-Alice -> Bob: Authentication Request Authentication Request Authentication Request
-Bob --> Alice: Authentication Response
-
-Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response
+@startuml Copropriete
+hide footbox
+participant internaute
+box utilisateurs
+participant syndic
+participant tresorier
+participant comptable
+participant coproprietaire
+end box
+database dbCopropriete
+internaute -> dbCopropriete : creer compte utilisateur
+syndic -> dbCopropriete : jouer role syndic
+syndic -> dbCopropriete : creer et parametrer
+dbCopropriete -> dbCopropriete : generer les cotisations\nmensuelles dues
+coproprietaire -> dbCopropriete : saisir les versements
+comptable -> dbCopropriete : saisir les versements
+dbCopropriete -> tresorier : versements a valider
+tresorier -> dbCopropriete : valider les versements
+dbCopropriete -> coproprietaire : versement valide
+tresorier -> dbCopropriete : saisir les decaissements
+dbCopropriete -> tresorier : decaissements a valider
+tresorier -> dbCopropriete : valider les decaissements
+comptable -> dbCopropriete : saisir les factures
+coproprietaire <-> dbCopropriete : consulter sa propre\nsituation
+coproprietaire <-> dbCopropriete : consulter situation\ncopropriete
+comptable -> dbCopropriete : cloturer un exercice
+dbCopropriete -> dbCopropriete : calculer le resultat\nde l'exercice
+comptable -> dbCopropriete : ouvrir un nouveau exercice
+dbCopropriete -> dbCopropriete : reporter les soldes des\ncomptes du bilan
+coproprietaire -> dbCopropriete : mettre en location
+coproprietaire -> dbCopropriete : mettre en vente
+internaute <- dbCopropriete : disponibles pour location/vente
 @enduml
