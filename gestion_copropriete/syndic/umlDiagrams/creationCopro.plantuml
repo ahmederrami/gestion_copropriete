@@ -1,0 +1,21 @@
+@startuml creation copropriete
+actor internaute
+actor utilisateur
+actor syndic
+database dbCopropriete
+internaute -> dbCopropriete : Creer compte
+dbCopropriete -> internaute : Compte cree
+utilisateur -> dbCopropriete : Se connecter
+dbCopropriete -> utilisateur : Menu : Creer nouvelle copropriete,\nMes coproprietes
+
+utilisateur -> dbCopropriete : Creer nouvelle copropriete
+dbCopropriete -> dbCopropriete : Affecter role syndic
+syndic -> dbCopropriete : Creer les parties privees
+syndic -> dbCopropriete : Creer les coproprietaires
+dbCopropriete -> dbCopropriete : Informer le coproprietaire\n par mail, sms, ou whatsapp
+syndic -> dbCopropriete : Selectionner les comptes\na utiliser pour enregistrer\nles transactions
+syndic -> dbCopropriete : Definir la cotisation mensuelle\na repartir
+syndic -> dbCopropriete : Affecter les roles de\ntresorier et comptable
+syndic -> dbCopropriete : Ceder le role de syndic\na une autre personne
+
+@enduml

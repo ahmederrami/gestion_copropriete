@@ -1,26 +1,34 @@
 @startuml Copropriete
 hide footbox
-participant internaute
+footer Page %page%/%lastpage%
+actor internaute
+actor utilisateur
 box utilisateurs
-participant syndic
-participant tresorier
-participant comptable
-participant coproprietaire
+actor coproprietaire
+actor syndic
+actor tresorier
+actor comptable
 end box
 database dbCopropriete
 internaute -> dbCopropriete : creer compte utilisateur
-syndic -> dbCopropriete : jouer role syndic
-syndic -> dbCopropriete : creer et parametrer
-dbCopropriete -> dbCopropriete : generer les cotisations\nmensuelles dues
+utilisateur -> dbCopropriete : creer copropriete
+dbCopropriete -> dbCopropriete : affecter role syndic
+syndic -> dbCopropriete : creer les parties privees
+syndic -> dbCopropriete : creer les proprietaires
+syndic -> dbCopropriete : affecter les roles de gestion
+newpage
+dbCopropriete -> dbCopropriete : generer les cotisations\nmensuelles a encaisser
 coproprietaire -> dbCopropriete : saisir les versements
 comptable -> dbCopropriete : saisir les versements
 dbCopropriete -> tresorier : versements a valider
 tresorier -> dbCopropriete : valider les versements
 dbCopropriete -> coproprietaire : versement valide
-tresorier -> dbCopropriete : saisir les decaissements
+comptable -> dbCopropriete : saisir les decaissements
 dbCopropriete -> tresorier : decaissements a valider
 tresorier -> dbCopropriete : valider les decaissements
 comptable -> dbCopropriete : saisir les factures
+comptable -> dbCopropriete : saisir les cotisations\nexceptionnelles a encaisser
+newpage
 coproprietaire <-> dbCopropriete : consulter sa propre\nsituation
 coproprietaire <-> dbCopropriete : consulter situation\ncopropriete
 comptable -> dbCopropriete : cloturer un exercice

@@ -1,0 +1,26 @@
+@startuml 
+left to right direction
+actor internaute
+actor utilisateur
+actor syndic
+actor tresorier
+actor comptable
+actor coproprietaire
+internaute -- (consulter les offres de\nvente et de location)
+internaute -- (devenir utilisateur)
+utilisateur -- (creer une copropriete)
+(creer une copropriete) .> (jouer role syndic) : include
+syndic -- (parametrer copropriete)
+(parametrer copropriete) .> (creer les parties privees) : include
+(parametrer copropriete) .> (creer les coproprietaires) : include
+(parametrer copropriete) .> (designer un comptable\net un tresorier)
+tresorier -- (enregistrer les transactions\nde decaissement)
+comptable -- (enregistrer les\ncotisations versees)
+coproprietaire -- (enregistrer les\ncotisations versees)
+tresorier -- (approuver les versements\nenregistres)
+comptable -- (cloturer / ouvrir une\nperiode comptable)
+coproprietaire -- (consulter sa\npropre situation)
+coproprietaire -- (consulter la situation\nde la copropriete)
+comptable -- (enregistrer les\nfactures a payer)
+
+@enduml

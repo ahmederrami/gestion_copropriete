@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser
 import datetime
@@ -64,7 +65,7 @@ class Copropriete(models.Model):
         #condition : on est sur le nouveau exercice (exercice+1), ecriture de cloture non encore passee
         #procedure : calculer le solde CPC, passer l'ecriture resultat-exercice-cpc avec resultat-exercice-bilan
 
-    def ouvertureExercice(self,exercice):
+    def ouvrirExercice(self,exercice):
         pass
         #procedure : s'assuer que le bilan est equilibre, passer les soldes des comptes de bilan de 
         #l'exercice precedent avec le solde initial
@@ -110,7 +111,7 @@ class Proprietaire(models.Model):
 class Gestionnaire(models.Model):
     ROLE_CHOICES = ( ('President','president'),('Adjoint','adjoint'),('Comptable','comptable'),('Tresorier', 'tresorier'),)
     coproprietes = models.ManyToManyField(Copropriete, related_name = "hist_gestionnaires")
-    responsable = models.ForeignKey(User, on_delete = models.CASCADE, related_name="gestionnaires")
+    responsable = models.ForeignKey(User, on_delete=models.CASCADE, related_name="gestionnaires")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     dateDebut = models.DateTimeField(default=timezone.now)
     dateFin = models.DateTimeField(null=True, blank=True)
@@ -149,6 +150,7 @@ class Compte(models.Model): # compte de base a generer automatiquement : caisse,
         else:
             return "Le compte ne peut etre desactive si son solde n'est pas nul"
 
+
 class Transaction(models.Model):
     copropriete = models.ForeignKey(Copropriete, on_delete=models.CASCADE, related_name='transactions')
     operation = models.CharField(max_length=200)
@@ -165,7 +167,7 @@ class Transaction(models.Model):
     def __str__(self):
         return f'{self.operation},{self.compte_debit},{self.compte_credit},{self.montant}'
 
-    def transactionValide(self):
+    def validerDateComptable(self):
         exOuv=self.copropriete.parametres.exerciceOuvert
         if self.date_comptable.year==exOuv:
             return True
@@ -173,4 +175,4 @@ class Transaction(models.Model):
             if self.date_comptable.year>exOuv and self.date_comptable<=timezone.now():
                 return True
             else:
-                return False
+                return "Date comptable non valide"

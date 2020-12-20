@@ -1,0 +1,30 @@
+@startuml
+
+title Parallel - Activity Diagram 
+
+start
+repeat
+    :Realiser les travaux;
+    :Verifier la conformite;
+    :Identifier les reserves;
+    repeat
+        :Proceder a la levee des reserves bloquantes;
+    repeat while (reserve levee ?) is (Non)
+    :Elaborer le bordereaux\ndes travaux réalisés;
+    :Etablir PV de réception;
+    note : Eventuellement avec des\nreserves non bloquantes
+repeat while (Ouvrage pret pour la MES ?) is (Non)
+detach
+:Constituer le dossier recollement de l'ouvrage;
+:Réaliser les vérifications techniques et les\nessais préliminaires à la MES de l'installation;
+:Identifier les réserves;
+repeat
+    :Proceder a la levee des reserves;
+repeat while (reserve levee ?) is (Non)
+:Elaborer le PV de\ntransfert de l'ouvrage;
+:Etablir les documents d'exploitation;
+:Mettre en service l'ouvrage;
+
+stop
+
+@enduml

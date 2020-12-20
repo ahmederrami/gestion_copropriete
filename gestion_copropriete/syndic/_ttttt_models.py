@@ -98,7 +98,7 @@ class CoproprieteTestCase(TestCase):
         self.assertEqual(len(copropriete1.getGestionairesActuels()),2)
         self.assertEqual(len(copropriete1.getSituationFinanciere(2020)),3)
         self.assertEqual(sum([copropriete1.getSituationFinanciere(2020)[x] for x in copropriete1.getSituationFinanciere(2020)]),0.00)
-        self.assertEqual(copropriete1.transactions.all()[0].transactionValide(),True)
+        self.assertEqual(copropriete1.transactions.all()[0].validerDateComptable(),True)
         self.assertEqual(compte1.solde_compte(),1000)
         self.assertEqual(compte1.desactiver(),"Le compte ne peut etre desactive si son solde n'est pas nul")
 
@@ -111,7 +111,7 @@ class CoproprieteTestCase(TestCase):
         self.assertEqual(len(copropriete2.getGestionairesActuels()),2)
         self.assertEqual(coproParam2.copropriete.ville,'ville')
         self.assertEqual(copropriete2.parametres.exerciceOuvert,2019)
-        self.assertEqual(copropriete2.transactions.all()[0].transactionValide(),True)
+        self.assertEqual(copropriete2.transactions.all()[0].validerDateComptable(),True)
         
         
 

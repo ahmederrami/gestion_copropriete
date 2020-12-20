@@ -1,0 +1,41 @@
+@startuml
+
+title Classes - Class Diagram
+Copropriete *-- PartiePrivee
+
+class User {
+    +username
+    -password
+    +email
+}
+
+class Copropriete {
+    +copropriete
+    +adresse
+    +ville
+    +pays
+    +totalPartsCopropriete
+    +creeLe
+    +modifieLe
+    +actif
+    +totalPartsExact()
+    +getGestionairesActuels()
+    +getSituationFinanciere(annee)
+    +getJournalTransactions(annee)
+    +cloturerExercice(annee)
+    +ouvrirExercice(annee)
+}
+
+class Parametre{
+    +copropriete
+    +exerciceOuvert
+    +cotisationMensuelle
+    +creeLe
+    +modifieePar
+    +modifieLe
+}
+class PartiePrivee
+class Compte
+class Transaction
+
+@enduml
